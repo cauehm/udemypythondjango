@@ -1,0 +1,75 @@
+###############################################################################
+# Replace
+# udemypythondjango to the name of the gunicorn file you want
+# caue to your user name
+# app_repo to the folder name of your project
+# project to the folder name where you find a file called wsgi.py
+#
+###############################################################################
+# Criando o arquivo udemypythondjango.socket
+sudo nano /etc/systemd/system/udemypythondjango.socket
+
+###############################################################################
+# Conteúdo do arquivo
+[Unit]
+Description=gunicorn blog socket
+
+[Socket]
+ListenStream=/run/udemypythondjango.socket
+
+[Install]
+WantedBy=sockets.target
+
+###############################################################################
+# Criando o arquivo udemypythondjango.service
+sudo nano /etc/systemd/system/udemypythondjango.service
+
+###############################################################################
+# Conteúdo do arquivo
+[Unit]
+Description=Gunicorn daemon (You can change if you want)
+Requires=udemypythondjango.socket
+After=network.target
+
+[Service]
+User=caue
+Group=www-data
+Restart=on-failure
+EnvironmentFile=/home/caue/app_repo/.env
+WorkingDirectory=/home/caue/app_repo
+# --error-logfile --enable-stdio-inheritance --log-level and --capture-output
+# are all for debugging purposes.
+ExecStart=/home/caue/app_repo/venv/bin/gunicorn \
+          --error-logfile /home/caue/app_repo/gunicorn-error-log \
+          --enable-stdio-inheritance \
+          --log-level "debug" \
+          --capture-output \
+          --access-logfile - \
+          --workers 6 \
+          --bind unix:/run/udemypythondjango.socket \
+          project.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
+
+###############################################################################
+# Ativando
+sudo systemctl start udemypythondjango.socket
+sudo systemctl enable udemypythondjango.socket
+
+# Checando
+sudo systemctl status udemypythondjango.socket
+curl --unix-socket /run/udemypythondjango.socket localhost
+sudo systemctl status udemypythondjango
+
+# Restarting
+sudo systemctl restart udemypythondjango.service
+sudo systemctl restart udemypythondjango.socket
+sudo systemctl restart udemypythondjango
+
+# After changing something
+sudo systemctl daemon-reload
+
+# Debugging
+sudo journalctl -u udemypythondjango.service
+sudo journalctl -u udemypythondjango.socket
