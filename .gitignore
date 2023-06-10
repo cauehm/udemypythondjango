@@ -19,7 +19,7 @@ _local_settings.py
 gunicorn-error-log
 db.sqlite3
 static/
-deploy/
+deploy
 
 # Django #
 *.log
